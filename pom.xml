@@ -11,6 +11,7 @@
     <modules>
         <module>netty_lev2</module>
         <module>netty_lev1</module>
+        <module>chat_demo</module>
     </modules>
     <!--    父项目-->
     <parent>
