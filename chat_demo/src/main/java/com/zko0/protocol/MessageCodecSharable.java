@@ -1,5 +1,6 @@
 package com.zko0.protocol;
 
+import com.zko0.config.Config;
 import com.zko0.message.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
@@ -28,7 +29,7 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf, Message
         //版本
         out.writeByte(1);
         //序列化算法 0:jdk 1:json
-        out.writeByte(0);
+        out.writeByte(Config.getSerializerAlgorithm().ordinal());
         //指令类型
         out.writeByte(msg.getMessageType());
         //4个字节的请求序号
@@ -51,21 +52,18 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf, Message
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         int magicNum = in.readInt();
         byte version = in.readByte();
-        byte serializerType = in.readByte();
+        byte serializerAlgorithm = in.readByte();
+        //serializerAlgorithm 0或1
         byte messageType = in.readByte();
         int sequenceId = in.readInt();
         in.readByte();
         int length = in.readInt();
         byte[] bytes=new byte[length];
         in.readBytes(bytes,0,length);
-        if (serializerType==0){
-            //使用jdk反序列化
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
-            Message message = (Message)objectInputStream.readObject();
-            log.info("{},{},{},{},{},{}",magicNum,version,serializerType,messageType,sequenceId,length);
-            log.info("{}",message);
-            out.add(message);
-        }
+        Serializer.Algorithm algorithm = Serializer.Algorithm.values()[serializerAlgorithm];
+
+        Class<? extends Message> messageClass = Message.getMessageClass(messageType);
+        Message deserialize = algorithm.deserialize(messageClass, bytes);
+        out.add(deserialize);
     }
 }
