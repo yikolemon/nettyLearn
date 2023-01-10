@@ -38,10 +38,7 @@ public class MessageCodecSharable extends MessageToMessageCodec<ByteBuf, Message
         out.writeByte(0xff);
         //长度
         //内容字节数组
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos=new ObjectOutputStream(bos);
-        oos.writeObject(msg);
-        byte[] bytes = bos.toByteArray();
+        byte[] bytes = Config.getSerializerAlgorithm().serialize(msg);
         //长度
         out.writeInt(bytes.length);
         out.writeBytes(bytes);
